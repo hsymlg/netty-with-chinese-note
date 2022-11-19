@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 public interface TimerTask {
 
     /**
+     * 停止所有的还没被执行的定时任务
      * Executed after the delay specified with
      * {@link Timer#newTimeout(TimerTask, long, TimeUnit)}.
      *

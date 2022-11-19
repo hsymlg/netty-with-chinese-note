@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 public interface Timer {
 
     /**
+     * 调度指定的 TimerTask ，在指定的延迟后执行
      * Schedules the specified {@link TimerTask} for one-time execution after
      * the specified delay.
      *
