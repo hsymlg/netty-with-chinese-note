@@ -126,7 +126,7 @@ public class PooledByteBufAllocatorTest extends AbstractByteBufAllocatorTest<Poo
 
     @Test
     public void testWithoutUseCacheForAllThreads() {
-        assertFalse(Thread.currentThread() instanceof FastThreadLocalThread);
+        assertThat(Thread.currentThread()).isNotInstanceOf(FastThreadLocalThread.class);
 
         PooledByteBufAllocator pool = new PooledByteBufAllocator(
                 /*preferDirect=*/ false,
@@ -277,7 +277,7 @@ public class PooledByteBufAllocatorTest extends AbstractByteBufAllocatorTest<Poo
     public void testCollapse() {
         int pageSize = 8192;
         //no cache
-        ByteBufAllocator allocator = new PooledByteBufAllocator(true, 0, 1, 8192, 9, 0, 0, 0);
+        ByteBufAllocator allocator = new PooledByteBufAllocator(true, 1, 1, 8192, 9, 0, 0, 0);
 
         ByteBuf b1 = allocator.buffer(pageSize * 4);
         ByteBuf b2 = allocator.buffer(pageSize * 5);
@@ -310,7 +310,7 @@ public class PooledByteBufAllocatorTest extends AbstractByteBufAllocatorTest<Poo
     @Test
     public void testAllocateSmallOffset() {
         int pageSize = 8192;
-        ByteBufAllocator allocator = new PooledByteBufAllocator(true, 0, 1, 8192, 9, 0, 0, 0);
+        ByteBufAllocator allocator = new PooledByteBufAllocator(true, 1, 1, 8192, 9, 0, 0, 0);
 
         int size = pageSize * 5;
 
@@ -910,5 +910,51 @@ public class PooledByteBufAllocatorTest extends AbstractByteBufAllocatorTest<Poo
             }
         }
         return totalUsed;
+    }
+
+    @Test
+    public void testCapacityChangeDoesntThrowAssertionError() throws Exception {
+        ByteBufAllocator allocator = newAllocator(true);
+        List<ByteBuf> buffers = new ArrayList<ByteBuf>();
+        try {
+            for (int i = 0; i < 31; i++) {
+                buffers.add(allocator.heapBuffer());
+            }
+
+            final ByteBuf buf = allocator.heapBuffer();
+            buffers.add(buf);
+            final AtomicReference<AssertionError> assertionRef = new AtomicReference<AssertionError>();
+            Runnable capacityChangeTask = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        buf.capacity(512);
+                    } catch (AssertionError e) {
+                        assertionRef.compareAndSet(null, e);
+                        throw e;
+                    }
+                }
+            };
+            Thread thread1 = new Thread(capacityChangeTask);
+            Thread thread2 = new Thread(capacityChangeTask);
+
+            thread1.start();
+            thread2.start();
+
+            thread1.join();
+            thread2.join();
+
+            buffers.add(allocator.heapBuffer());
+            buffers.add(allocator.heapBuffer());
+
+            AssertionError error = assertionRef.get();
+            if (error != null) {
+                throw error;
+            }
+        } finally {
+            for (ByteBuf buffer: buffers) {
+                buffer.release();
+            }
+        }
     }
 }

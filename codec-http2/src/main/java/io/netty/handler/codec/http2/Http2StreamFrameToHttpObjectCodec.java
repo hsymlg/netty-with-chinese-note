@@ -44,7 +44,6 @@ import io.netty.handler.codec.http.LastHttpContent;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
-import io.netty.util.internal.UnstableApi;
 
 import java.util.List;
 
@@ -57,7 +56,6 @@ import java.util.List;
  * For simplicity, it converts to chunked encoding unless the entire stream
  * is a single header.
  */
-@UnstableApi
 @Sharable
 public class Http2StreamFrameToHttpObjectCodec extends MessageToMessageCodec<Http2StreamFrame, HttpObject> {
 
@@ -112,7 +110,7 @@ public class Http2StreamFrameToHttpObjectCodec extends MessageToMessageCodec<Htt
                 }
             } else {
                 HttpMessage req = newMessage(id, headers);
-                if (!HttpUtil.isContentLengthSet(req)) {
+                if ((status == null || !isContentAlwaysEmpty(status)) && !HttpUtil.isContentLengthSet(req)) {
                     req.headers().add(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
                 }
                 out.add(req);
@@ -265,6 +263,22 @@ public class Http2StreamFrameToHttpObjectCodec extends MessageToMessageCodec<Htt
             return char0 == '1'
                 && char1 >= '0' && char1 <= '9'
                 && char2 >= '0' && char2 <= '9' && char2 != '1';
+        }
+        return false;
+    }
+
+    /*
+     * https://datatracker.ietf.org/doc/html/rfc9113#section-8.1.1
+     * '204' or '304' responses contain no content
+     */
+    private static boolean isContentAlwaysEmpty(CharSequence status) {
+        if (status.length() == 3) {
+            char char0 = status.charAt(0);
+            char char1 = status.charAt(1);
+            char char2 = status.charAt(2);
+            return (char0 == '2' || char0 == '3')
+                && char1 == '0'
+                && char2 == '4';
         }
         return false;
     }

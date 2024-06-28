@@ -86,7 +86,7 @@
 extern int epoll_create1(int flags) __attribute__((weak));
 extern int epoll_pwait2(int epfd, struct epoll_event *events, int maxevents, const struct timespec *timeout, const sigset_t *sigmask) __attribute__((weak));
 
-#ifndef __USE_GNU
+#ifndef _GNU_SOURCE
 struct mmsghdr {
     struct msghdr msg_hdr;  /* Message header */
     unsigned int  msg_len;  /* Number of bytes transmitted */
@@ -102,6 +102,9 @@ struct mmsghdr {
 #elif defined(__i386__)
 // See https://github.com/torvalds/linux/blob/v5.4/arch/x86/entry/syscalls/syscall_32.tbl
 #define SYS_recvmmsg 337
+#elif defined(__loongarch64)
+// See https://github.com/torvalds/linux/blob/v6.1/include/uapi/asm-generic/unistd.h
+#define SYS_recvmmsg 243
 #else
 #define SYS_recvmmsg -1
 #endif
@@ -115,6 +118,9 @@ struct mmsghdr {
 #elif defined(__i386__)
 // See https://github.com/torvalds/linux/blob/v5.4/arch/x86/entry/syscalls/syscall_32.tbl
 #define SYS_sendmmsg 345
+#elif defined(__loongarch64)
+// See https://github.com/torvalds/linux/blob/v6.1/include/uapi/asm-generic/unistd.h
+#define SYS_sendmmsg 269
 #else
 #define SYS_sendmmsg -1
 #endif
@@ -315,6 +321,8 @@ static inline void cpu_relax() {
     asm volatile("pause\n": : :"memory");
 #elif defined(__aarch64__)
     asm volatile("isb\n": : :"memory");
+#elif defined(__riscv) && defined(__riscv_zihintpause)
+    asm volatile("pause\n": : :"memory");
 #endif
 }
 

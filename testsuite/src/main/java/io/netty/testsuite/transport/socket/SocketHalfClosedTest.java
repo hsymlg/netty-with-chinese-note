@@ -19,7 +19,6 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelConfig;
 import io.netty.channel.ChannelFuture;
@@ -363,7 +362,7 @@ public class SocketHalfClosedTest extends AbstractSocketTest {
                                                              Bootstrap cb) throws InterruptedException {
         final int expectedBytes = 100;
         final CountDownLatch serverReadExpectedLatch = new CountDownLatch(1);
-        final CountDownLatch doneLatch = new CountDownLatch(1);
+        final CountDownLatch doneLatch = new CountDownLatch(2);
         final AtomicReference<Throwable> causeRef = new AtomicReference<Throwable>();
         Channel serverChannel = null;
         Channel clientChannel = null;
@@ -375,9 +374,9 @@ public class SocketHalfClosedTest extends AbstractSocketTest {
                     .childOption(ChannelOption.AUTO_CLOSE, false)
                     .childOption(ChannelOption.SO_LINGER, 0);
 
-            final SimpleChannelInboundHandler<ByteBuf> leaderHandler = new AutoCloseFalseLeader(expectedBytes,
+            final AutoCloseFalseLeader leaderHandler = new AutoCloseFalseLeader(expectedBytes,
                     serverReadExpectedLatch, doneLatch, causeRef);
-            final SimpleChannelInboundHandler<ByteBuf> followerHandler = new AutoCloseFalseFollower(expectedBytes,
+            final AutoCloseFalseFollower followerHandler = new AutoCloseFalseFollower(expectedBytes,
                     serverReadExpectedLatch, doneLatch, causeRef);
             sb.childHandler(new ChannelInitializer<Channel>() {
                 @Override
@@ -398,6 +397,7 @@ public class SocketHalfClosedTest extends AbstractSocketTest {
 
             doneLatch.await();
             assertNull(causeRef.get());
+            assertTrue(leaderHandler.seenOutputShutdown);
         } finally {
             if (clientChannel != null) {
                 clientChannel.close().sync();
@@ -479,7 +479,7 @@ public class SocketHalfClosedTest extends AbstractSocketTest {
         private final CountDownLatch doneLatch;
         private final AtomicReference<Throwable> causeRef;
         private int bytesRead;
-        private boolean seenOutputShutdown;
+        boolean seenOutputShutdown;
 
         AutoCloseFalseLeader(int expectedBytes, CountDownLatch followerCloseLatch, CountDownLatch doneLatch,
                              AtomicReference<Throwable> causeRef) {
@@ -515,10 +515,6 @@ public class SocketHalfClosedTest extends AbstractSocketTest {
         protected void channelRead0(ChannelHandlerContext ctx, ByteBuf msg) throws Exception {
             bytesRead += msg.readableBytes();
             if (bytesRead >= expectedBytes) {
-                if (!seenOutputShutdown) {
-                    causeRef.set(new IllegalStateException(
-                            ChannelOutputShutdownEvent.class.getSimpleName() + " event was not seen"));
-                }
                 doneLatch.countDown();
             }
         }
@@ -527,6 +523,7 @@ public class SocketHalfClosedTest extends AbstractSocketTest {
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             if (evt instanceof ChannelOutputShutdownEvent) {
                 seenOutputShutdown = true;
+                doneLatch.countDown();
             }
         }
 

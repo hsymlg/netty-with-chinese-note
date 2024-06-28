@@ -15,6 +15,8 @@
 
 package io.netty.handler.codec.http2;
 
+import java.io.Closeable;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -23,7 +25,6 @@ import io.netty.handler.codec.http2.Http2CodecUtil.SimpleChannelPromiseAggregato
 import io.netty.handler.codec.http2.Http2FrameWriter.Configuration;
 import io.netty.handler.codec.http2.Http2HeadersEncoder.SensitivityDetector;
 import io.netty.util.internal.PlatformDependent;
-import io.netty.util.internal.UnstableApi;
 
 import static io.netty.buffer.Unpooled.directBuffer;
 import static io.netty.buffer.Unpooled.unreleasableBuffer;
@@ -69,7 +70,6 @@ import static java.lang.Math.min;
 /**
  * A {@link Http2FrameWriter} that supports all frame types defined by the HTTP/2 specification.
  */
-@UnstableApi
 public class DefaultHttp2FrameWriter implements Http2FrameWriter, Http2FrameSizePolicy, Configuration {
     private static final String STREAM_ID = "Stream ID";
     private static final String STREAM_DEPENDENCY = "Stream Dependency";
@@ -96,6 +96,9 @@ public class DefaultHttp2FrameWriter implements Http2FrameWriter, Http2FrameSize
         this(new DefaultHttp2HeadersEncoder(headersSensitivityDetector, ignoreMaxHeaderListSize));
     }
 
+    /**
+     * @param headersEncoder will be closed if it implements {@link Closeable}
+     */
     public DefaultHttp2FrameWriter(Http2HeadersEncoder headersEncoder) {
         this.headersEncoder = headersEncoder;
         maxFrameSize = DEFAULT_MAX_FRAME_SIZE;
@@ -130,7 +133,15 @@ public class DefaultHttp2FrameWriter implements Http2FrameWriter, Http2FrameSize
     }
 
     @Override
-    public void close() { }
+    public void close() {
+        if (headersEncoder instanceof Closeable) {
+            try {
+                ((Closeable) headersEncoder).close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     @Override
     public ChannelFuture writeData(ChannelHandlerContext ctx, int streamId, ByteBuf data,
@@ -567,7 +578,7 @@ public class DefaultHttp2FrameWriter implements Http2FrameWriter, Http2FrameSize
                 ByteBuf fragment = headerBlock.readRetainedSlice(fragmentReadableBytes);
 
                 if (headerBlock.isReadable()) {
-                    ctx.write(buf.retain(), promiseAggregator.newPromise());
+                    ctx.write(buf.retainedSlice(), promiseAggregator.newPromise());
                 } else {
                     // The frame header is different for the last frame, so re-allocate and release the old buffer
                     flags = flags.endOfHeaders(true);

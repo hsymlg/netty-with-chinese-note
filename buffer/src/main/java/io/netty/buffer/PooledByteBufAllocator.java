@@ -300,9 +300,9 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
         if (nHeapArena > 0) {
             heapArenas = newArenaArray(nHeapArena);
             List<PoolArenaMetric> metrics = new ArrayList<PoolArenaMetric>(heapArenas.length);
+            final SizeClasses sizeClasses = new SizeClasses(pageSize, pageShifts, chunkSize, 0);
             for (int i = 0; i < heapArenas.length; i ++) {
-                PoolArena.HeapArena arena = new PoolArena.HeapArena(this,
-                        pageSize, pageShifts, chunkSize);
+                PoolArena.HeapArena arena = new PoolArena.HeapArena(this, sizeClasses);
                 heapArenas[i] = arena;
                 metrics.add(arena);
             }
@@ -315,9 +315,10 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
         if (nDirectArena > 0) {
             directArenas = newArenaArray(nDirectArena);
             List<PoolArenaMetric> metrics = new ArrayList<PoolArenaMetric>(directArenas.length);
+            final SizeClasses sizeClasses = new SizeClasses(pageSize, pageShifts, chunkSize,
+                    directMemoryCacheAlignment);
             for (int i = 0; i < directArenas.length; i ++) {
-                PoolArena.DirectArena arena = new PoolArena.DirectArena(
-                        this, pageSize, pageShifts, chunkSize, directMemoryCacheAlignment);
+                PoolArena.DirectArena arena = new PoolArena.DirectArena(this, sizeClasses);
                 directArenas[i] = arena;
                 metrics.add(arena);
             }
@@ -523,7 +524,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
                     executor != null) {
                 final PoolThreadCache cache = new PoolThreadCache(
                         heapArena, directArena, smallCacheSize, normalCacheSize,
-                        DEFAULT_MAX_CACHED_BUFFER_CAPACITY, DEFAULT_CACHE_TRIM_INTERVAL);
+                        DEFAULT_MAX_CACHED_BUFFER_CAPACITY, DEFAULT_CACHE_TRIM_INTERVAL, true);
 
                 if (DEFAULT_CACHE_TRIM_INTERVAL_MILLIS > 0) {
                     if (executor != null) {
@@ -534,7 +535,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
                 return cache;
             }
             // No caching so just use 0 as sizes.
-            return new PoolThreadCache(heapArena, directArena, 0, 0, 0, 0);
+            return new PoolThreadCache(heapArena, directArena, 0, 0, 0, 0, false);
         }
 
         @Override

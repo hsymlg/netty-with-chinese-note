@@ -26,7 +26,7 @@
   <groupId>io.netty</groupId>
   <artifactId>netty-parent</artifactId>
   <packaging>pom</packaging>
-  <version>4.1.86.Final-SNAPSHOT</version>
+  <version>4.1.111.Final-SNAPSHOT</version>
 
   <name>Netty</name>
   <url>https://netty.io/</url>
@@ -88,6 +88,13 @@
               </execution>
             </executions>
             <configuration>
+              <skippedModules>
+                netty-all,netty-bom,netty-testsuite,netty-testsuite-autobahn,netty-testsuite-http2,
+                netty-testsuite-native,netty-testsuite-native-image,netty-testsuite-native-image-client,
+                netty-testsuite-native-image-client-runtime-init,netty-testsuite-osgi,netty-testsuite-shading,
+                netty-transport-blockhound-tests,netty-transport-native-unix-common-tests,netty-microbench,
+                netty-dev-tools,netty-example
+              </skippedModules>
               <sourceFileExcludes>
                 <exclude>**/com/sun/**/*.java</exclude>
                 <exclude>**/example/**/*.java</exclude>
@@ -179,6 +186,102 @@
         <skipNativeImageTestsuite>false</skipNativeImageTestsuite>
         <forbiddenapis.skip>true</forbiddenapis.skip>
         <testJvm />
+      </properties>
+    </profile>
+    <profile>
+      <id>java23</id>
+      <activation>
+        <jdk>23</jdk>
+      </activation>
+      <properties>
+        <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
+        <argLine.alpnAgent />
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
+        <forbiddenapis.skip>true</forbiddenapis.skip>
+        <!-- 1.4.x does not work in Java10+ -->
+        <jboss.marshalling.version>2.0.5.Final</jboss.marshalling.version>
+        <!-- We need to use 1.8 as otherwise default methods are not picked up and so result in compile errors for
+             our EventExecutorGroup implementations
+        -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- pax-exam does not work on latest Java12 EA 22 build -->
+        <skipOsgiTestsuite>true</skipOsgiTestsuite>
+        <revapi.skip>true</revapi.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>java22</id>
+      <activation>
+        <jdk>22</jdk>
+      </activation>
+      <properties>
+        <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
+        <argLine.alpnAgent />
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
+        <forbiddenapis.skip>true</forbiddenapis.skip>
+        <!-- 1.4.x does not work in Java10+ -->
+        <jboss.marshalling.version>2.0.5.Final</jboss.marshalling.version>
+        <!-- We need to use 1.8 as otherwise default methods are not picked up and so result in compile errors for
+             our EventExecutorGroup implementations
+        -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- pax-exam does not work on latest Java12 EA 22 build -->
+        <skipOsgiTestsuite>true</skipOsgiTestsuite>
+        <revapi.skip>true</revapi.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>java21</id>
+      <activation>
+        <jdk>21</jdk>
+      </activation>
+      <properties>
+        <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
+        <argLine.alpnAgent />
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
+        <forbiddenapis.skip>true</forbiddenapis.skip>
+        <!-- 1.4.x does not work in Java10+ -->
+        <jboss.marshalling.version>2.0.5.Final</jboss.marshalling.version>
+        <!-- We need to use 1.8 as otherwise default methods are not picked up and so result in compile errors for
+             our EventExecutorGroup implementations
+        -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- pax-exam does not work on latest Java12 EA 22 build -->
+        <skipOsgiTestsuite>true</skipOsgiTestsuite>
+        <revapi.skip>true</revapi.skip>
+      </properties>
+    </profile>
+    <profile>
+      <id>java20</id>
+      <activation>
+        <jdk>20</jdk>
+      </activation>
+      <properties>
+        <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
+        <argLine.alpnAgent />
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
+        <forbiddenapis.skip>true</forbiddenapis.skip>
+        <!-- 1.4.x does not work in Java10+ -->
+        <jboss.marshalling.version>2.0.5.Final</jboss.marshalling.version>
+        <!-- We need to use 1.8 as otherwise default methods are not picked up and so result in compile errors for
+             our EventExecutorGroup implementations
+        -->
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <!-- pax-exam does not work on latest Java12 EA 22 build -->
+        <skipOsgiTestsuite>true</skipOsgiTestsuite>
+        <revapi.skip>true</revapi.skip>
       </properties>
     </profile>
     <profile>
@@ -472,6 +575,14 @@
       </properties>
     </profile>
     <profile>
+      <id>boringssl-snapshot</id>
+      <properties>
+        <tcnative.artifactId>netty-tcnative-boringssl-static</tcnative.artifactId>
+        <tcnative.version>2.0.66.Final-SNAPSHOT</tcnative.version>
+        <tcnative.classifier>${os.detected.classifier}</tcnative.classifier>
+      </properties>
+    </profile>
+    <profile>
       <id>leak</id>
       <properties>
         <argLine.leak>-Dio.netty.leakDetectionLevel=paranoid -Dio.netty.leakDetection.targetRecords=32</argLine.leak>
@@ -487,6 +598,12 @@
       <id>noUnsafe</id>
       <properties>
         <argLine.noUnsafe>-Dio.netty.noUnsafe=true</argLine.noUnsafe>
+      </properties>
+    </profile>
+    <profile>
+      <id>jdk23DenyUnsafe</id>
+      <properties>
+        <argLine.noUnsafe>--sun-misc-unsafe-memory-access=deny</argLine.noUnsafe>
       </properties>
     </profile>
     <profile>
@@ -576,6 +693,7 @@
       -dsa -da -ea:io.netty...
       -XX:+HeapDumpOnOutOfMemoryError
     </argLine.common>
+    <argLine.jni>-D_</argLine.jni>
     <!-- Default to ALPN. See forcenpn profile to force NPN -->
     <argLine.alpnAgent>-javaagent:${jetty.alpnAgent.path}=${jetty.alpnAgent.option}</argLine.alpnAgent>
     <argLine.leak>-D_</argLine.leak> <!-- Overridden when 'leak' profile is active -->
@@ -586,12 +704,12 @@
     <argLine.javaProperties>-D_</argLine.javaProperties>
     <!-- Configure the os-maven-plugin extension to expand the classifier on                  -->
     <!-- Fedora-"like" systems. This is currently only used for the netty-tcnative dependency -->
-    <osmaven.version>1.7.0</osmaven.version>
+    <osmaven.version>1.7.1</osmaven.version>
     <!-- keep in sync with PlatformDependent#ALLOWED_LINUX_OS_CLASSIFIERS -->
     <os.detection.classifierWithLikes>fedora,suse,arch</os.detection.classifierWithLikes>
     <tcnative.artifactId>netty-tcnative</tcnative.artifactId>
     <!-- Keep in sync with bom/pom.xml -->
-    <tcnative.version>2.0.54.Final</tcnative.version>
+    <tcnative.version>2.0.65.Final</tcnative.version>
     <tcnative.classifier>${os.detected.classifier}</tcnative.classifier>
     <conscrypt.groupId>org.conscrypt</conscrypt.groupId>
     <conscrypt.artifactId>conscrypt-openjdk-uber</conscrypt.artifactId>
@@ -610,7 +728,7 @@
     <skipAutobahnTestsuite>false</skipAutobahnTestsuite>
     <skipHttp2Testsuite>false</skipHttp2Testsuite>
     <graalvm.version>19.3.6</graalvm.version>
-    <brotli4j.version>1.8.0</brotli4j.version>
+    <brotli4j.version>1.16.0</brotli4j.version>
     <!-- By default skip native testsuite as it requires a custom environment with graalvm installed -->
     <skipNativeImageTestsuite>true</skipNativeImageTestsuite>
     <skipShadingTestsuite>false</skipShadingTestsuite>
@@ -650,6 +768,7 @@
     <module>transport-udt</module>
     <module>handler</module>
     <module>handler-proxy</module>
+    <module>handler-ssl-ocsp</module>
     <module>example</module>
     <module>testsuite</module>
     <module>testsuite-autobahn</module>
@@ -670,7 +789,7 @@
       <dependency>
         <groupId>io.netty</groupId>
         <artifactId>netty-jni-util</artifactId>
-        <version>0.0.6.Final</version>
+        <version>0.0.9.Final</version>
         <classifier>sources</classifier>
         <optional>true</optional>
       </dependency>
@@ -775,6 +894,17 @@
         <optional>true</optional>
       </dependency>
 
+      <!--
+        Completely optional and only needed for ALPN.
+      -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bctls-jdk15on</artifactId>
+        <version>1.69</version>
+        <scope>compile</scope>
+        <optional>true</optional>
+      </dependency>
+
       <dependency>
         <groupId>com.fasterxml</groupId>
         <artifactId>aalto-xml</artifactId>
@@ -804,7 +934,7 @@
       <dependency>
         <groupId>com.github.luben</groupId>
         <artifactId>zstd-jni</artifactId>
-        <version>1.5.0-2</version>
+        <version>1.5.5-11</version>
         <optional>true</optional>
       </dependency>
       <dependency>
@@ -814,7 +944,27 @@
       </dependency>
       <dependency>
         <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-linux-ppc64le</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
         <artifactId>native-linux-x86_64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-linux-aarch64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-linux-riscv64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-linux-armv7</artifactId>
         <version>${brotli4j.version}</version>
       </dependency>
       <dependency>
@@ -824,7 +974,17 @@
       </dependency>
       <dependency>
         <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-osx-aarch64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
         <artifactId>native-windows-x86_64</artifactId>
+        <version>${brotli4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.aayushatharva.brotli4j</groupId>
+        <artifactId>native-windows-aarch64</artifactId>
         <version>${brotli4j.version}</version>
       </dependency>
 
@@ -832,7 +992,7 @@
       <dependency>
         <groupId>org.jctools</groupId>
         <artifactId>jctools-core</artifactId>
-        <version>3.1.0</version>
+        <version>4.0.5</version>
       </dependency>
 
       <!-- Annotations for IDE integration and analysis -->
@@ -960,7 +1120,7 @@
       <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
-        <version>1.2.3</version>
+        <version>1.2.13</version>
         <scope>test</scope>
       </dependency>
       <dependency>
@@ -996,7 +1156,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-compress</artifactId>
-        <version>1.21</version>
+        <version>1.26.0</version>
         <scope>test</scope>
       </dependency>
 
@@ -1197,6 +1357,38 @@
                   <superClass>io.netty.handler.codec.http.multipart.AbstractMixedHttpData&lt;io.netty.handler.codec.http.multipart.Attribute&gt;</superClass>
                   <justification>Acceptable incompatibility for required change</justification>
                 </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.annotation.removed</code>
+                  <annotation>@io.netty.channel.ChannelHandlerMask.Skip</annotation>
+                  <justification>No change in compatibility</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.method.finalMethodAddedToNonFinalClass</code>
+                  <new>method io.netty.channel.unix.DomainSocketAddress io.netty.channel.unix.Socket::localDomainSocketAddress()</new>
+                  <justification>Acceptable incompatibility for required change</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.method.finalMethodAddedToNonFinalClass</code>
+                  <new>method io.netty.channel.unix.DomainSocketAddress io.netty.channel.unix.Socket::remoteDomainSocketAddress()</new>
+                  <justification>Acceptable incompatibility for required change</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.method.returnTypeErasureChanged</code>
+                  <old>method B io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder&lt;T extends io.netty.handler.codec.http2.Http2ConnectionHandler, B extends io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder&lt;T, B&gt;&gt;::decoderEnforceMaxConsecutiveEmptyDataFrames(int) @ io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder</old>
+                  <new>method io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder::decoderEnforceMaxConsecutiveEmptyDataFrames(int)</new>
+                  <justification>Acceptable incompatibility for required change, because the method was not previously exposed; protected visiblity in super-class, not made public in final sub-class until now</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.method.returnTypeErasureChanged</code>
+                  <old>method B io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder&lt;T extends io.netty.handler.codec.http2.Http2ConnectionHandler, B extends io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder&lt;T, B&gt;&gt;::decoderEnforceMaxRstFramesPerWindow(int, int) @ io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder</old>
+                  <new>method io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder io.netty.handler.codec.http2.Http2ConnectionHandlerBuilder::decoderEnforceMaxRstFramesPerWindow(int, int)</new>
+                  <justification>Acceptable incompatibility for required change, because the method was not previously exposed; protected visiblity in super-class, not made public in final sub-class until now</justification>
+                </item>
               </differences>
             </revapi.differences>
           </analysisConfiguration>
@@ -1213,7 +1405,7 @@
       <plugin>
         <groupId>com.github.siom79.japicmp</groupId>
         <artifactId>japicmp-maven-plugin</artifactId>
-        <version>0.15.4</version>
+        <version>0.21.0</version>
         <configuration>
           <parameter>
             <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
@@ -1269,10 +1461,10 @@
                 </requireMavenVersion>
                 <requireProperty>
                   <regexMessage>
-		     x86_64/AARCH64/PPCLE64/s390x_64/loongarch64 JDK must be used.
+		     x86_64/AARCH64/RISCV64/PPCLE64/s390x_64/loongarch64 JDK must be used.
                   </regexMessage>
                   <property>os.detected.arch</property>
-                  <regex>^(x86_64|aarch_64|ppcle_64|s390_64|loongarch_64)$</regex>
+                  <regex>^(x86_64|aarch_64|riscv64|ppcle_64|s390_64|loongarch_64)$</regex>
                 </requireProperty>
               </rules>
             </configuration>
@@ -1459,7 +1651,7 @@
             <nativeImage.handlerMetadataGroupId>${project.groupId}</nativeImage.handlerMetadataGroupId>
             <nativeimage.handlerMetadataArtifactId>${project.artifactId}</nativeimage.handlerMetadataArtifactId>
           </systemPropertyVariables>
-          <argLine>${argLine.common} ${argLine.printGC} ${argLine.alpnAgent} ${argLine.leak} ${argLine.coverage} ${argLine.noUnsafe} ${argLine.java9} ${argLine.javaProperties}</argLine>
+          <argLine>${argLine.common} ${argLine.printGC} ${argLine.alpnAgent} ${argLine.leak} ${argLine.coverage} ${argLine.noUnsafe} ${argLine.jni} ${argLine.java9} ${argLine.javaProperties} -Dio.netty.bootstrap.extensions=serviceload</argLine>
           <properties>
             <property>
               <name>listener</name>
@@ -1476,7 +1668,7 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.5.4</version>
+        <version>5.1.8</version>
         <executions>
           <execution>
             <id>generate-manifest</id>
@@ -1492,7 +1684,7 @@
               <instructions>
                 <Export-Package>${project.groupId}.*</Export-Package>
                 <!-- enforce JVM vendor package as optional -->
-                <Import-Package>sun.misc.*;resolution:=optional,sun.nio.ch;resolution:=optional,sun.security.*;resolution:=optional,org.eclipse.jetty.npn;version="[1,2)";resolution:=optional,org.eclipse.jetty.alpn;version="[1,2)";resolution:=optional,*</Import-Package>
+                <Import-Package>sun.net.dns.*;resolution:=optional,sun.misc.*;resolution:=optional,sun.nio.ch;resolution:=optional,sun.security.*;resolution:=optional,org.eclipse.jetty.npn;version="[1,2)";resolution:=optional,org.eclipse.jetty.alpn;version="[1,2)";resolution:=optional,org.bouncycastle.jcajce.provider;version="[1.0,2)";resolution:=optional,*</Import-Package>
                 <!-- override "internal" private package convention -->
                 <Private-Package>!*</Private-Package>
               </instructions>
@@ -1771,6 +1963,7 @@
                 <archive>
                   <manifest>
                     <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                   </manifest>
                   <manifestEntries>
                     <Automatic-Module-Name>${javaModuleName}</Automatic-Module-Name>
@@ -1823,8 +2016,8 @@
         </plugin>
         <plugin>
           <groupId>org.fusesource.hawtjni</groupId>
-          <artifactId>maven-hawtjni-plugin</artifactId>
-          <version>1.14</version>
+          <artifactId>hawtjni-maven-plugin</artifactId>
+          <version>1.18</version>
         </plugin>
         <plugin>
           <groupId>kr.motd.maven</groupId>
@@ -1914,7 +2107,7 @@
                 <pluginExecution>
                   <pluginExecutionFilter>
                     <groupId>org.fusesource.hawtjni</groupId>
-                    <artifactId>maven-hawtjni-plugin</artifactId>
+                    <artifactId>hawtjni-maven-plugin</artifactId>
                     <versionRange>[1.10,)</versionRange>
                     <goals>
                       <goal>generate</goal>

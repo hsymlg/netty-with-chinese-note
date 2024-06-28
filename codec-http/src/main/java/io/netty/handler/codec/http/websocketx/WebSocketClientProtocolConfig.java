@@ -35,6 +35,7 @@ public final class WebSocketClientProtocolConfig {
     static final boolean DEFAULT_HANDLE_CLOSE_FRAMES = true;
     static final boolean DEFAULT_DROP_PONG_FRAMES = true;
     static final boolean DEFAULT_GENERATE_ORIGIN_HEADER = true;
+    static final boolean DEFAULT_WITH_UTF8_VALIDATOR = true;
 
     private final URI webSocketUri;
     private final String subprotocol;
@@ -51,6 +52,7 @@ public final class WebSocketClientProtocolConfig {
     private final long forceCloseTimeoutMillis;
     private final boolean absoluteUpgradeUrl;
     private final boolean generateOriginHeader;
+    private final boolean withUTF8Validator;
 
     private WebSocketClientProtocolConfig(
         URI webSocketUri,
@@ -67,7 +69,8 @@ public final class WebSocketClientProtocolConfig {
         long handshakeTimeoutMillis,
         long forceCloseTimeoutMillis,
         boolean absoluteUpgradeUrl,
-        boolean generateOriginHeader
+        boolean generateOriginHeader,
+        boolean withUTF8Validator
     ) {
         this.webSocketUri = webSocketUri;
         this.subprotocol = subprotocol;
@@ -84,6 +87,7 @@ public final class WebSocketClientProtocolConfig {
         this.handshakeTimeoutMillis = checkPositive(handshakeTimeoutMillis, "handshakeTimeoutMillis");
         this.absoluteUpgradeUrl = absoluteUpgradeUrl;
         this.generateOriginHeader = generateOriginHeader;
+        this.withUTF8Validator = withUTF8Validator;
     }
 
     public URI webSocketUri() {
@@ -146,6 +150,10 @@ public final class WebSocketClientProtocolConfig {
         return generateOriginHeader;
     }
 
+    public boolean withUTF8Validator() {
+        return withUTF8Validator;
+    }
+
     @Override
     public String toString() {
         return "WebSocketClientProtocolConfig" +
@@ -187,7 +195,8 @@ public final class WebSocketClientProtocolConfig {
                 DEFAULT_HANDSHAKE_TIMEOUT_MILLIS,
                 -1,
                 false,
-                DEFAULT_GENERATE_ORIGIN_HEADER);
+                DEFAULT_GENERATE_ORIGIN_HEADER,
+                DEFAULT_WITH_UTF8_VALIDATOR);
     }
 
     public static final class Builder {
@@ -206,6 +215,7 @@ public final class WebSocketClientProtocolConfig {
         private long forceCloseTimeoutMillis;
         private boolean absoluteUpgradeUrl;
         private boolean generateOriginHeader;
+        private boolean withUTF8Validator;
 
         private Builder(WebSocketClientProtocolConfig clientConfig) {
             this(ObjectUtil.checkNotNull(clientConfig, "clientConfig").webSocketUri(),
@@ -222,7 +232,8 @@ public final class WebSocketClientProtocolConfig {
                  clientConfig.handshakeTimeoutMillis(),
                  clientConfig.forceCloseTimeoutMillis(),
                  clientConfig.absoluteUpgradeUrl(),
-                 clientConfig.generateOriginHeader());
+                 clientConfig.generateOriginHeader(),
+                 clientConfig.withUTF8Validator());
         }
 
         private Builder(URI webSocketUri,
@@ -239,7 +250,8 @@ public final class WebSocketClientProtocolConfig {
                         long handshakeTimeoutMillis,
                         long forceCloseTimeoutMillis,
                         boolean absoluteUpgradeUrl,
-                        boolean generateOriginHeader) {
+                        boolean generateOriginHeader,
+                        boolean withUTF8Validator) {
             this.webSocketUri = webSocketUri;
             this.subprotocol = subprotocol;
             this.version = version;
@@ -255,6 +267,7 @@ public final class WebSocketClientProtocolConfig {
             this.forceCloseTimeoutMillis = forceCloseTimeoutMillis;
             this.absoluteUpgradeUrl = absoluteUpgradeUrl;
             this.generateOriginHeader = generateOriginHeader;
+            this.withUTF8Validator = withUTF8Validator;
         }
 
         /**
@@ -392,6 +405,14 @@ public final class WebSocketClientProtocolConfig {
         }
 
         /**
+         * Toggles UTF8 validation for payload of text websocket frames. By default validation is enabled.
+         */
+        public Builder withUTF8Validator(boolean withUTF8Validator) {
+            this.withUTF8Validator = withUTF8Validator;
+            return this;
+        }
+
+        /**
          * Build unmodifiable client protocol configuration.
          */
         public WebSocketClientProtocolConfig build() {
@@ -410,7 +431,8 @@ public final class WebSocketClientProtocolConfig {
                 handshakeTimeoutMillis,
                 forceCloseTimeoutMillis,
                 absoluteUpgradeUrl,
-                generateOriginHeader
+                generateOriginHeader,
+                withUTF8Validator
             );
         }
     }

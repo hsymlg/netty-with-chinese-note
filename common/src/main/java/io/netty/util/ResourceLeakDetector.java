@@ -107,7 +107,7 @@ public class ResourceLeakDetector<T> {
             logger.debug("-Dio.netty.noResourceLeakDetection: {}", disabled);
             logger.warn(
                     "-Dio.netty.noResourceLeakDetection is deprecated. Use '-D{}={}' instead.",
-                    PROP_LEVEL, DEFAULT_LEVEL.name().toLowerCase());
+                    PROP_LEVEL, Level.DISABLED.name().toLowerCase());
         } else {
             disabled = false;
         }
@@ -172,6 +172,11 @@ public class ResourceLeakDetector<T> {
     private final int samplingInterval;
 
     /**
+     * Will be notified once a leak is detected.
+     */
+    private volatile LeakListener leakListener;
+
+    /**
      * @deprecated use {@link ResourceLeakDetectorFactory#newResourceLeakDetector(Class, int, long)}.
      */
     @Deprecated
@@ -231,7 +236,7 @@ public class ResourceLeakDetector<T> {
      */
     @Deprecated
     public final ResourceLeak open(T obj) {
-        return track0(obj);
+        return track0(obj, false);
     }
 
     /**
@@ -242,25 +247,33 @@ public class ResourceLeakDetector<T> {
      */
     @SuppressWarnings("unchecked")
     public final ResourceLeakTracker<T> track(T obj) {
-        return track0(obj);
+        return track0(obj, false);
+    }
+
+    /**
+     * Creates a new {@link ResourceLeakTracker} which is expected to be closed via
+     * {@link ResourceLeakTracker#close(Object)} when the related resource is deallocated.
+     *
+     * Unlike {@link #track(Object)}, this method always returns a tracker, regardless
+     * of the detection settings.
+     *
+     * @return the {@link ResourceLeakTracker}
+     */
+    @SuppressWarnings("unchecked")
+    public ResourceLeakTracker<T> trackForcibly(T obj) {
+        return track0(obj, true);
     }
 
     @SuppressWarnings("unchecked")
-    private DefaultResourceLeak track0(T obj) {
+    private DefaultResourceLeak track0(T obj, boolean force) {
         Level level = ResourceLeakDetector.level;
-        if (level == Level.DISABLED) {
-            return null;
+        if (force ||
+                level == Level.PARANOID ||
+                (level != Level.DISABLED && PlatformDependent.threadLocalRandom().nextInt(samplingInterval) == 0)) {
+            reportLeak();
+            return new DefaultResourceLeak(obj, refQueue, allLeaks, getInitialHint(resourceType));
         }
-
-        if (level.ordinal() < Level.PARANOID.ordinal()) {
-            if ((PlatformDependent.threadLocalRandom().nextInt(samplingInterval)) == 0) {
-                reportLeak();
-                return new DefaultResourceLeak(obj, refQueue, allLeaks, getInitialHint(resourceType));
-            }
-            return null;
-        }
-        reportLeak();
-        return new DefaultResourceLeak(obj, refQueue, allLeaks, getInitialHint(resourceType));
+        return null;
     }
 
     private void clearRefQueue() {
@@ -307,6 +320,11 @@ public class ResourceLeakDetector<T> {
                 } else {
                     reportTracedLeak(resourceType, records);
                 }
+
+                LeakListener listener = leakListener;
+                if (listener != null) {
+                    listener.onLeak(resourceType, records);
+                }
             }
         }
     }
@@ -349,6 +367,21 @@ public class ResourceLeakDetector<T> {
      */
     protected Object getInitialHint(String resourceType) {
         return null;
+    }
+
+    /**
+     * Set leak listener. Previous listener will be replaced.
+     */
+    public void setLeakListener(LeakListener leakListener) {
+        this.leakListener = leakListener;
+    }
+
+    public interface LeakListener {
+
+        /**
+         * Will be called once a leak is detected.
+         */
+        void onLeak(String resourceType, String records);
     }
 
     @SuppressWarnings("deprecation")
@@ -664,7 +697,7 @@ public class ResourceLeakDetector<T> {
                     // Suppress a warning about out of bounds access
                     // since the length of excludedMethods is always even, see addExclusions()
                     if (exclusions[k].equals(element.getClassName())
-                            && exclusions[k + 1].equals(element.getMethodName())) { // lgtm[java/index-out-of-bounds]
+                            && exclusions[k + 1].equals(element.getMethodName())) {
                         continue out;
                     }
                 }
